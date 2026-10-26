@@ -245,3 +245,60 @@ def find_node(self, start):
             else:
                 n = n.right
         return best
+
+def to_array(self):
+        """Returns all slots in increasing start-time order. Time: O(n)."""
+        result = [None] * self._size
+        index = [0]
+        self._fill_in_order(self._root, result, index)
+        return result
+
+    def _fill_in_order(self, n, out, index):
+        if n is None:
+            return
+        self._fill_in_order(n.left, out, index)
+        out[index[0]] = n
+        index[0] += 1
+        self._fill_in_order(n.right, out, index)
+
+    def get_size(self):
+        """Number of booked slots. Time: O(1)."""
+        return self._size
+
+    def is_empty(self):
+        """True when no slots are booked. Time: O(1)."""
+        return self._size == 0
+
+    def get_height(self):
+        """Height of the whole tree. Time: O(1)."""
+        return self._height(self._root)
+
+    def get_root(self):
+        """Root node reference. Time: O(1)."""
+        return self._root
+
+    def clear(self):
+        """Removes every slot. Time: O(1)."""
+        self._root = None
+        self._size = 0
+
+    def is_valid(self):
+        """Walks the whole tree and verifies ordering, balance, and invariants. Time: O(n)."""
+        return self._check_node(self._root, IntervalTree.NEG_INF, INT_MAX) != -1
+
+    def _check_node(self, n, low_exclusive, high_exclusive):
+        if n is None:
+            return 0
+        if n.start <= low_exclusive or n.start >= high_exclusive:
+            return -1
+        left_height = self._check_node(n.left, low_exclusive, n.start)
+        right_height = self._check_node(n.right, n.start, high_exclusive)
+        if left_height == -1 or right_height == -1:
+            return -1
+        true_height = 1 + max(left_height, right_height)
+        if n.height != true_height or abs(left_height - right_height) > 1:
+            return -1
+        expected_max = max(n.end, max(self._max_end(n.left), self._max_end(n.right)))
+        if n.max_end != expected_max:
+            return -1
+        return true_height
