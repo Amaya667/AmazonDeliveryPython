@@ -84,3 +84,61 @@ class IntervalTree:
                 return self._rotate_left(n)
             return self._rotate_right_left(n)
         return n
+def insert(self, start, end, package_id):
+        """
+        Inserts a new slot [start, end) for the given package.
+        Time: O(log n).
+        """
+        if start >= end:
+            return False
+        if self.find_node(start) is not None:
+            return False
+        self._root = self._insert_rec(self._root, start, end, package_id)
+        self._size += 1
+        return True
+
+    def _insert_rec(self, node, start, end, package_id):
+        if node is None:
+            return IntervalTreeNode(start, end, package_id)
+        if start < node.start:
+            node.left = self._insert_rec(node.left, start, end, package_id)
+        else:
+            node.right = self._insert_rec(node.right, start, end, package_id)
+        return self._rebalance(node)
+
+    def delete(self, start):
+        """
+        Deletes the slot whose start time equals 'start'.
+        Time: O(log n).
+        """
+        self._deleted_flag = False
+        self._root = self._delete_rec(self._root, start)
+        if self._deleted_flag:
+            self._size -= 1
+        return self._deleted_flag
+
+    def _delete_rec(self, node, start):
+        if node is None:
+            return None
+        if start < node.start:
+            node.left = self._delete_rec(node.left, start)
+        elif start > node.start:
+            node.right = self._delete_rec(node.right, start)
+        else:
+            if not self._deleted_flag:
+                self._deleted_flag = True
+            if node.left is None:
+                return node.right
+            if node.right is None:
+                return node.left
+            successor = self._min_node(node.right)
+            node.start = successor.start
+            node.end = successor.end
+            node.package_id = successor.package_id
+            node.right = self._delete_rec(node.right, successor.start)
+        return self._rebalance(node)
+
+    def _min_node(self, node):
+        while node.left is not None:
+            node = node.left
+        return node
