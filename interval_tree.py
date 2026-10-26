@@ -142,3 +142,106 @@ def insert(self, start, end, package_id):
         while node.left is not None:
             node = node.left
         return node
+def find_node(self, start):
+        """Finds the node whose start time equals 'start'. Time: O(log n)."""
+        n = self._root
+        while n is not None:
+            if start < n.start:
+                n = n.left
+            elif start > n.start:
+                n = n.right
+            else:
+                return n
+        return None
+
+    def search_overlap(self, q_start, q_end):
+        """Returns ANY slot that overlaps the query [q_start, q_end), or None."""
+        n = self._root
+        while n is not None and not (n.start < q_end and q_start < n.end):
+            if n.left is not None and n.left.max_end > q_start:
+                n = n.left
+            else:
+                n = n.right
+        return n
+
+    def has_conflict(self, q_start, q_end):
+        """True if [q_start, q_end) conflicts with any booked slot. Time: O(log n)."""
+        return self.search_overlap(q_start, q_end) is not None
+
+    def report_overlaps(self, q_start, q_end):
+        """Returns every slot overlapping [q_start, q_end) in start-time order."""
+        self._report_buffer = [None] * 8
+        self._report_count = 0
+        self._report_rec(self._root, q_start, q_end)
+
+        result = [None] * self._report_count
+        for i in range(self._report_count):
+            result[i] = self._report_buffer[i]
+        self._report_buffer = None
+        return result
+
+    def _report_rec(self, n, q_start, q_end):
+        if n is None or n.max_end <= q_start:
+            return
+        self._report_rec(n.left, q_start, q_end)
+        if n.start < q_end and q_start < n.end:
+            self._add_to_buffer(n)
+        if n.start < q_end:
+            self._report_rec(n.right, q_start, q_end)
+
+    def _add_to_buffer(self, n):
+        if self._report_count == len(self._report_buffer):
+            bigger = [None] * (len(self._report_buffer) * 2)
+            for i in range(self._report_count):
+                bigger[i] = self._report_buffer[i]
+            self._report_buffer = bigger
+        self._report_buffer[self._report_count] = n
+        self._report_count += 1
+
+    def stabbing_query(self, t):
+        """Every delivery active at the single instant t. Time: O(log n + k)."""
+        return self.report_overlaps(t, t + 1)
+
+    def free_slot(self, duration, after):
+        """Earliest time T >= 'after' for a gap of at least 'duration' minutes."""
+        self._cursor = after
+        self._gap_found = False
+        self._gap_duration = duration
+        self._free_slot_visit(self._root)
+        return self._cursor
+
+    def _free_slot_visit(self, n):
+        if n is None or self._gap_found or n.max_end <= self._cursor:
+            return
+        self._free_slot_visit(n.left)
+        if self._gap_found:
+            return
+        if n.start - self._cursor >= self._gap_duration:
+            self._gap_found = True
+            return
+        self._cursor = max(self._cursor, n.end)
+        self._free_slot_visit(n.right)
+
+    def predecessor(self, t):
+        """Slot with the largest start strictly before t. Time: O(log n)."""
+        best = None
+        n = self._root
+        while n is not None:
+            if n.start < t:
+                best = n
+                n = n.right
+            else:
+                n = n.left
+        return best
+
+    def successor(self, t):
+        """Slot with the smallest start at or after t. Time: O(log n)."""
+        best = None
+        n = self._root
+        while n is not None:
+            if n.start >= t:
+                best = n
+                n = n.left
+            else:
+                n = n.right
+        return best
