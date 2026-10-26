@@ -30,3 +30,22 @@ class IntervalTreeNode:
 
         # Right child (slots with larger start).
         self.right = None
+        def __str__(self):
+        """
+        Returns a readable text such as "[09:00, 09:20) P101".
+        Used by the GUI when displaying a vehicle's schedule. Time: O(1).
+        """
+        return ("[" + IntervalTreeNode.format_time(self.start) + ", "
+                + IntervalTreeNode.format_time(self.end) + ") P" + str(self.package_id))
+
+    @staticmethod
+    def format_time(minutes):
+        """
+        Converts minutes-from-midnight into "HH:MM".
+        Example: 575 -> "09:35". Time: O(1).
+        """
+        hours = _java_div(minutes, 60)
+        mins = minutes - _java_div(minutes, 60) * 60      # Java's minutes % 60
+        h = ("0" + str(hours)) if (hours < 10) else str(hours)
+        m = ("0" + str(mins)) if (mins < 10) else str(mins)
+        return h + ":" + m
